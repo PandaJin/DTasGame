@@ -1,0 +1,171 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus } from 'lucide-react'
+import type { Task } from '@/types/database'
+
+interface TimeEntryFormProps {
+  tasks: Task[]
+}
+
+export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
+  const [open, setOpen] = useState(false)
+  const [taskId, setTaskId] = useState('')
+  const [hours, setHours] = useState('')
+  const [minutes, setMinutes] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [notes, setNotes] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    const totalMinutes = (parseInt(hours) || 0) * 60 + (parseInt(minutes) || 0)
+
+    if (totalMinutes <= 0) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error } = await supabase.from('time_entries').insert({
+        task_id: taskId,
+        date,
+        duration_minutes: totalMinutes,
+        entry_type: 'manual',
+        notes: notes || null,
+      })
+
+      if (!error) {
+        setOpen(false)
+        setTaskId('')
+        setHours('')
+        setMinutes('')
+        setNotes('')
+        router.refresh()
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          手动添加
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>添加时间记录</DialogTitle>
+            <DialogDescription>手动记录你在某个任务上花费的时间</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>任务</Label>
+              <Select value={taskId} onValueChange={setTaskId} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="选择任务" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tasks.map((task) => (
+                    <SelectItem key={task.id} value={task.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: task.color }}
+                        />
+                        P{task.priority} - {task.name}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>日期</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>时长</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="小时"
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                  className="w-24"
+                />
+                <span>小时</span>
+                <Input
+                  type="number"
+                  min="0"
+                  max="59"
+                  placeholder="分钟"
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                  className="w-24"
+                />
+                <span>分钟</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>备注（可选）</Label>
+              <Input
+                placeholder="做了什么..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              取消
+            </Button>
+            <Button type="submit" disabled={loading || !taskId}>
+              {loading ? '添加中...' : '添加'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

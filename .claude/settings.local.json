@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame status)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame diff --stat origin/claude/github-sync-mechanism-V2JdB..HEAD)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame show --stat)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame branch -a)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame log --all --graph --oneline)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame show HEAD:README.md)",
+      "Bash(find:*)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame ls-tree:*)",
+      "Bash(git -C /Users/sirius/Code/Claude/DTasGame show HEAD --stat)",
+      "WebSearch",
+      "Bash(npm cache clean:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest init:*)",
+      "Bash(npm config:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
