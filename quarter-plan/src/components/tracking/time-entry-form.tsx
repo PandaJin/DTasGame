@@ -38,6 +38,7 @@ export function TimeEntryForm({ tasks, defaultDate, triggerLabel, compact }: Tim
   const [hours, setHours] = useState('')
   const [minutes, setMinutes] = useState('')
   const [date, setDate] = useState(defaultDate || new Date().toISOString().split('T')[0])
+  const [startTime, setStartTime] = useState('')
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -54,12 +55,24 @@ export function TimeEntryForm({ tasks, defaultDate, triggerLabel, compact }: Tim
       return
     }
 
+    let started_at: string | null = null
+    let ended_at: string | null = null
+
+    if (startTime) {
+      const startDate = new Date(`${date}T${startTime}:00`)
+      started_at = startDate.toISOString()
+      const endDate = new Date(startDate.getTime() + totalMinutes * 60 * 1000)
+      ended_at = endDate.toISOString()
+    }
+
     try {
       const { error } = await supabase.from('time_entries').insert({
         task_id: taskId,
         date,
         duration_minutes: totalMinutes,
         entry_type: 'manual',
+        started_at,
+        ended_at,
         notes: notes || null,
       })
 
@@ -68,6 +81,7 @@ export function TimeEntryForm({ tasks, defaultDate, triggerLabel, compact }: Tim
         setTaskId('')
         setHours('')
         setMinutes('')
+        setStartTime('')
         setNotes('')
         router.refresh()
       }
@@ -120,15 +134,26 @@ export function TimeEntryForm({ tasks, defaultDate, triggerLabel, compact }: Tim
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>日期</Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="h-11 md:h-9"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>日期</Label>
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                  className="h-11 md:h-9"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>开始时间<span className="text-muted-foreground font-normal ml-1">（可选）</span></Label>
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="h-11 md:h-9"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

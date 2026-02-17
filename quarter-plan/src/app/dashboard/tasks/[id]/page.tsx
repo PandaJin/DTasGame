@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { TaskDetailEditButton } from './edit-button'
+import { TaskActions } from './task-actions'
 import { TaskDailyChart } from './daily-chart'
 import { TimeEntryList } from '@/components/tracking/time-entry-list'
 import { subDays, format, eachDayOfInterval } from 'date-fns'
@@ -88,9 +89,11 @@ export default async function TaskDetailPage({ params }: TaskDetailPageProps) {
             />
             <h1 className="text-xl md:text-2xl font-bold truncate">{task.name}</h1>
             <TaskDetailEditButton task={task} />
+            <TaskActions task={task} />
           </div>
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
             <Badge className={`${priority.color} text-white text-xs`}>{priority.label}</Badge>
+            {task.is_archived && <Badge variant="secondary" className="text-xs">已归档</Badge>}
             <span>预估 {task.estimated_hours}h</span>
             <span>·</span>
             <span>已投入 {loggedHours.toFixed(1)}h</span>

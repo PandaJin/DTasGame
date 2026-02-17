@@ -5,15 +5,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { TimeEntryForm } from '@/components/tracking/time-entry-form'
-import { ExpandableEntry } from '@/components/tracking/expandable-entry'
-import { ChevronDown, FileText, Clock, Timer } from 'lucide-react'
+import { DayTimeline } from '@/components/tracking/day-timeline'
+import { ChevronDown, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Task, TimeEntry, DailyNote } from '@/types/database'
 
@@ -44,7 +38,7 @@ export function WeekDayCard({
   tasks,
   dailyNote,
 }: WeekDayCardProps) {
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [noteContent, setNoteContent] = useState(dailyNote?.content || '')
   const [saving, setSaving] = useState(false)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
@@ -126,79 +120,66 @@ export function WeekDayCard({
   const hasNote = !!(dailyNote?.content || noteContent)
 
   return (
-    <>
-      <Card className={isToday ? 'ring-2 ring-primary shadow-sm' : 'opacity-90'}>
-        <CardContent className="py-2.5 md:py-3 px-3 md:px-4">
-          {/* Header: day label + total + add button */}
-          <div className="flex items-center justify-between mb-1">
-            <button
-              type="button"
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              onClick={() => setDialogOpen(true)}
-            >
-              <span className={`text-sm font-medium ${isToday ? 'text-primary' : ''}`}>
-                {dayLabel}
-              </span>
-              {isToday && (
-                <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
-                  今天
-                </span>
-              )}
-              {hasNote && (
-                <FileText className="w-3 h-3 text-muted-foreground/60" />
-              )}
-            </button>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-sm font-bold tabular-nums ${dayTotal > 0 ? '' : 'text-muted-foreground'}`}>
-                {dayTotal > 0 ? fmtDuration(dayTotal) : '0m'}
-              </span>
-              <TimeEntryForm
-                tasks={tasks}
-                defaultDate={dateStr}
-                triggerLabel=""
-                compact
-              />
-            </div>
-          </div>
-
-          {/* Task breakdown */}
-          {taskList.length > 0 ? (
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-              {taskList.map(({ task, minutes }) => (
-                <span key={task.id} className="flex items-center gap-1">
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: task.color }}
-                  />
-                  <span className="truncate max-w-[100px]">{task.name}</span>
-                  <span className="tabular-nums">{fmtDuration(minutes)}</span>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground/60">暂无记录</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Day detail dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+    <Card className={isToday ? 'ring-2 ring-primary shadow-sm' : 'opacity-90'}>
+      <CardContent className="py-2.5 md:py-3 px-3 md:px-4">
+        {/* Header: day label + total + add button */}
+        <div className="flex items-center justify-between mb-1">
+          <button
+            type="button"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            onClick={() => setExpanded(!expanded)}
+          >
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`}
+            />
+            <span className={`text-sm font-medium ${isToday ? 'text-primary' : ''}`}>
               {dayLabel}
-              {isToday && (
-                <Badge variant="default" className="text-xs">今天</Badge>
-              )}
-            </DialogTitle>
-          </DialogHeader>
+            </span>
+            {isToday && (
+              <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
+                今天
+              </span>
+            )}
+            {hasNote && !expanded && (
+              <FileText className="w-3 h-3 text-muted-foreground/60" />
+            )}
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className={`text-sm font-bold tabular-nums ${dayTotal > 0 ? '' : 'text-muted-foreground'}`}>
+              {dayTotal > 0 ? fmtDuration(dayTotal) : '0m'}
+            </span>
+            <TimeEntryForm
+              tasks={tasks}
+              defaultDate={dateStr}
+              triggerLabel=""
+              compact
+            />
+          </div>
+        </div>
 
-          {/* Summary */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">总计时长</span>
-              <span className="font-semibold">{dayTotal > 0 ? fmtDurationCN(dayTotal) : '无记录'}</span>
-            </div>
+        {/* Task breakdown (always visible) */}
+        {!expanded && taskList.length > 0 && (
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+            {taskList.map(({ task, minutes }) => (
+              <span key={task.id} className="flex items-center gap-1">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: task.color }}
+                />
+                <span className="truncate max-w-[100px]">{task.name}</span>
+                <span className="tabular-nums">{fmtDuration(minutes)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+        {!expanded && taskList.length === 0 && (
+          <p className="text-xs text-muted-foreground/60">暂无记录</p>
+        )}
+
+        {/* Expanded content */}
+        {expanded && (
+          <div className="mt-2 space-y-4">
+            {/* Daily target progress */}
             {dailyTargetMinutes > 0 && (
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
@@ -208,65 +189,61 @@ export function WeekDayCard({
                 <Progress value={dayProgress} className="h-1.5" />
               </div>
             )}
-          </div>
 
-          {/* Task breakdown */}
-          {taskList.length > 0 && (
-            <div className="pt-2 border-t">
-              <h4 className="text-sm font-medium mb-2.5">任务分布</h4>
-              <div className="space-y-2">
-                {taskList.map(({ task, minutes }) => (
-                  <div key={task.id} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: task.color }}
-                      />
-                      <span className="truncate">{task.name}</span>
-                      <Badge variant="outline" className="text-[10px] shrink-0 px-1 py-0">
-                        P{task.priority}
-                      </Badge>
+            {/* Task distribution */}
+            {taskList.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">任务分布</h4>
+                <div className="space-y-1.5">
+                  {taskList.map(({ task, minutes }) => (
+                    <div key={task.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: task.color }}
+                        />
+                        <span className="truncate text-xs">{task.name}</span>
+                        <Badge variant="outline" className="text-[10px] shrink-0 px-1 py-0">
+                          P{task.priority}
+                        </Badge>
+                      </div>
+                      <span className="font-medium tabular-nums shrink-0 ml-2 text-xs">{fmtDurationCN(minutes)}</span>
                     </div>
-                    <span className="font-medium tabular-nums shrink-0 ml-2">{fmtDurationCN(minutes)}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Time entries */}
-          {dayEntries.length > 0 && (
-            <div className="pt-2 border-t">
-              <h4 className="text-sm font-medium mb-2.5">时间记录</h4>
-              <div className="space-y-1.5">
-                {dayEntries.map(entry => (
-                  <ExpandableEntry key={entry.id} entry={entry} />
-                ))}
+            {/* Timeline (scrollable, click entries for details) */}
+            {dayEntries.length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-muted-foreground mb-2">时间线</h4>
+                <DayTimeline entries={dayEntries} />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Daily note */}
-          <div className="pt-2 border-t">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5" />
-                今日备注
-              </h4>
-              {saving && (
-                <span className="text-[10px] text-muted-foreground">保存中...</span>
-              )}
+            {/* Daily note */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h4 className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <FileText className="w-3 h-3" />
+                  今日备注
+                </h4>
+                {saving && (
+                  <span className="text-[10px] text-muted-foreground">保存中...</span>
+                )}
+              </div>
+              <Textarea
+                placeholder="写下今天的收获、感悟..."
+                value={noteContent}
+                onChange={(e) => handleNoteChange(e.target.value)}
+                className="min-h-[60px] text-sm resize-none"
+                rows={2}
+              />
             </div>
-            <Textarea
-              placeholder="写下今天的收获、感悟..."
-              value={noteContent}
-              onChange={(e) => handleNoteChange(e.target.value)}
-              className="min-h-[80px] text-sm resize-none"
-              rows={3}
-            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </CardContent>
+    </Card>
   )
 }
