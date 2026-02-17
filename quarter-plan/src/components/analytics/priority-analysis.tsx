@@ -46,15 +46,6 @@ export function PriorityAnalysis({ tasks, timeEntries }: PriorityAnalysisProps) 
     return { distribution, percentages, totalMinutes }
   }
 
-  const calculateAlignmentScore = (actual: Record<number, number>) => {
-    let score = 100
-    for (const p of [1, 2, 3, 4]) {
-      const diff = Math.abs(actual[p] - RECOMMENDED_DISTRIBUTION[p])
-      score -= diff * 0.5
-    }
-    return Math.max(0, Math.round(score))
-  }
-
   const generateInsights = (actual: Record<number, number>) => {
     const insights: Array<{ type: 'warning' | 'success' | 'info'; message: string }> = []
 
@@ -93,7 +84,6 @@ export function PriorityAnalysis({ tasks, timeEntries }: PriorityAnalysisProps) 
   }
 
   const { percentages, totalMinutes } = calculateDistribution()
-  const alignmentScore = calculateAlignmentScore(percentages)
   const insights = generateInsights(percentages)
 
   const pieData = [
@@ -110,55 +100,13 @@ export function PriorityAnalysis({ tasks, timeEntries }: PriorityAnalysisProps) 
     { priority: 'P4', actual: percentages[4], recommended: RECOMMENDED_DISTRIBUTION[4] },
   ]
 
-  const getScoreStatus = (score: number) => {
-    if (score >= 80) return { text: '时间分配合理', emoji: '✅' }
-    if (score >= 60) return { text: '需要调整', emoji: '⚠️' }
-    return { text: '严重偏离', emoji: '❌' }
-  }
-
-  const status = getScoreStatus(alignmentScore)
-
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-3 md:gap-6 grid-cols-1 md:grid-cols-2">
       <Card>
-        <CardHeader>
-          <CardTitle>优先级对齐分数</CardTitle>
+        <CardHeader className="pb-2 md:pb-4">
+          <CardTitle className="text-sm md:text-base">时间分布</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="text-center">
-            <div className="text-6xl font-bold">
-              {alignmentScore}
-              <span className="text-2xl text-muted-foreground">/100</span>
-            </div>
-            <p className="text-muted-foreground mt-2">
-              {status.emoji} {status.text}
-            </p>
-          </div>
-          <div className="mt-6 space-y-2">
-            {comparisonData.map(item => (
-              <div key={item.priority} className="flex items-center gap-2 text-sm">
-                <span className="w-8 font-medium">{item.priority}</span>
-                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary"
-                    style={{ width: `${item.actual}%` }}
-                  />
-                </div>
-                <span className="w-16 text-right">{item.actual}%</span>
-                <span className="w-16 text-right text-muted-foreground">
-                  (建议{item.recommended}%)
-                </span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>时间分布</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="px-2 md:px-6">
           {totalMinutes > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -168,33 +116,59 @@ export function PriorityAnalysis({ tasks, timeEntries }: PriorityAnalysisProps) 
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={80}
+                  outerRadius={70}
                   label={({ name, value }) => `${name}: ${value}%`}
+                  labelLine={{ strokeWidth: 1 }}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => `${value}%`} />
-                <Legend />
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              暂无数据，开始记录时间后将显示分布图
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">
+              暂无数据
             </div>
           )}
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-2 md:pb-4">
+          <CardTitle className="text-sm md:text-base">优先级分析</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {comparisonData.map(item => (
+              <div key={item.priority} className="space-y-1">
+                <div className="flex items-center justify-between text-xs md:text-sm">
+                  <span className="font-medium">{item.priority}</span>
+                  <span className="text-muted-foreground tabular-nums">
+                    {item.actual}% / 建议{item.recommended}%
+                  </span>
+                </div>
+                <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${item.actual}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>洞察与建议</CardTitle>
+        <CardHeader className="pb-2 md:pb-4">
+          <CardTitle className="text-sm md:text-base">洞察与建议</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {insights.map((insight, i) => (
             <Alert key={i} variant={insight.type === 'warning' ? 'destructive' : 'default'}>
-              <AlertDescription>{insight.message}</AlertDescription>
+              <AlertDescription className="text-xs md:text-sm">{insight.message}</AlertDescription>
             </Alert>
           ))}
         </CardContent>

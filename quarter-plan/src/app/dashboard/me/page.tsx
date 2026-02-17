@@ -2,36 +2,30 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRouter } from 'next/navigation'
 import { LogOut, Save, User } from 'lucide-react'
 
-export default function SettingsPage() {
+export default function MePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [user, setUser] = useState<{ email: string } | null>(null)
   const [profile, setProfile] = useState<{
     display_name: string
-    settings: {
-      defaultView: string
-      weekStartDay: number
-    }
+    settings: { defaultView: string; weekStartDay: number }
   } | null>(null)
-
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      if (!user) { router.push('/login'); return }
 
       setUser({ email: user.email || '' })
 
@@ -50,16 +44,13 @@ export default function SettingsPage() {
 
       setLoading(false)
     }
-
-    loadProfile()
+    loadData()
   }, [router, supabase])
 
   const handleSave = async () => {
     if (!profile) return
-
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-
     if (user) {
       await supabase
         .from('profiles')
@@ -70,7 +61,6 @@ export default function SettingsPage() {
         })
         .eq('id', user.id)
     }
-
     setSaving(false)
   }
 
@@ -81,32 +71,39 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6 max-w-2xl">
+        <Skeleton className="h-8 w-20" />
+        <Card>
+          <CardHeader className="pb-3">
+            <Skeleton className="h-5 w-24" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-8 w-24" />
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold">设置</h1>
-        <p className="text-muted-foreground">管理你的账户和偏好设置</p>
-      </div>
+    <div className="space-y-4 md:space-y-6 max-w-2xl">
+      <h1 className="text-xl md:text-2xl font-bold">我的</h1>
 
-      {/* 账户信息 */}
+      {/* Profile */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            账户信息
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <User className="h-4 w-4" />
+            个人信息
           </CardTitle>
-          <CardDescription>你的账户基本信息</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>邮箱</Label>
-            <Input value={user?.email || ''} disabled />
+            <Input value={user?.email || ''} disabled className="h-11 md:h-9" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="displayName">显示名称</Label>
@@ -115,34 +112,8 @@ export default function SettingsPage() {
               value={profile?.display_name || ''}
               onChange={(e) => setProfile(prev => prev ? { ...prev, display_name: e.target.value } : null)}
               placeholder="输入你的名称"
+              className="h-11 md:h-9"
             />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 偏好设置 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>偏好设置</CardTitle>
-          <CardDescription>自定义你的使用体验</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>默认视图</Label>
-            <Select
-              value={profile?.settings.defaultView || 'week'}
-              onValueChange={(value) => setProfile(prev =>
-                prev ? { ...prev, settings: { ...prev.settings, defaultView: value } } : null
-              )}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">日视图</SelectItem>
-                <SelectItem value="week">周视图</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-2">
             <Label>每周起始日</Label>
@@ -152,7 +123,7 @@ export default function SettingsPage() {
                 prev ? { ...prev, settings: { ...prev.settings, weekStartDay: parseInt(value) } } : null
               )}
             >
-              <SelectTrigger>
+              <SelectTrigger className="h-11 md:h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -161,20 +132,18 @@ export default function SettingsPage() {
               </SelectContent>
             </Select>
           </div>
+          <Button onClick={handleSave} disabled={saving} size="sm" className="min-h-[36px]">
+            <Save className="mr-2 h-3.5 w-3.5" />
+            {saving ? '保存中...' : '保存设置'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* 操作按钮 */}
-      <div className="flex justify-between">
-        <Button variant="destructive" onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          退出登录
-        </Button>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save className="mr-2 h-4 w-4" />
-          {saving ? '保存中...' : '保存设置'}
-        </Button>
-      </div>
+      {/* Logout */}
+      <Button variant="destructive" onClick={handleSignOut} className="w-full h-11 md:h-9">
+        <LogOut className="mr-2 h-4 w-4" />
+        退出登录
+      </Button>
     </div>
   )
 }

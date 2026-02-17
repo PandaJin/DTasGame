@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,14 +12,14 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
-import { startOfWeek, endOfWeek, eachWeekOfInterval, format, isWithinInterval } from 'date-fns'
+import { endOfWeek, eachWeekOfInterval, format, isWithinInterval } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 
 interface Task {
   id: string
   name: string
   color: string
-  weekly_target_hours: number
+  weekly_target_hours: number | null
 }
 
 interface TimeEntry {
@@ -68,21 +68,22 @@ export function WeeklyTrendChart({ tasks, timeEntries, quarterStart, quarterEnd 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>每周趋势</CardTitle>
+      <CardHeader className="pb-2 md:pb-4">
+        <CardTitle className="text-sm md:text-base">每周趋势</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 md:px-6">
         {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={chartData} margin={{ left: -10, right: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="week"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
+                interval="preserveStartEnd"
               />
               <YAxis
-                tick={{ fontSize: 12 }}
-                label={{ value: '小时', angle: -90, position: 'insideLeft' }}
+                tick={{ fontSize: 10 }}
+                width={35}
               />
               <Tooltip
                 formatter={(value, name) => [
@@ -96,33 +97,30 @@ export function WeeklyTrendChart({ tasks, timeEntries, quarterStart, quarterEnd 
               />
               <Legend
                 formatter={(value) => value === 'actual' ? '实际投入' : '目标线'}
+                wrapperStyle={{ fontSize: '12px' }}
               />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="actual"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ fill: '#3b82f6' }}
-                activeDot={{ r: 6 }}
+                fill="#3b82f6"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={32}
               />
               <ReferenceLine
                 y={weeklyTarget}
                 stroke="#94a3b8"
                 strokeDasharray="5 5"
-                label={{ value: '目标', position: 'right', fontSize: 12 }}
               />
               {currentWeekIndex >= 0 && (
                 <ReferenceLine
                   x={`W${currentWeekIndex + 1}`}
                   stroke="#22c55e"
                   strokeDasharray="3 3"
-                  label={{ value: '本周', position: 'top', fontSize: 12 }}
                 />
               )}
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+          <div className="h-[240px] flex items-center justify-center text-muted-foreground text-sm">
             暂无数据
           </div>
         )}

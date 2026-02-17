@@ -6,14 +6,15 @@ interface TimerState {
   isPaused: boolean
   taskId: string | null
   taskName: string | null
+  taskColor: string | null
   startTime: number | null
   pausedTime: number
   elapsedSeconds: number
 
-  startTimer: (taskId: string, taskName: string) => void
+  startTimer: (taskId: string, taskName: string, taskColor?: string) => void
   pauseTimer: () => void
   resumeTimer: () => void
-  stopTimer: () => { taskId: string; duration: number } | null
+  stopTimer: () => { taskId: string; taskName: string; duration: number } | null
   tick: () => void
   reset: () => void
 }
@@ -25,16 +26,18 @@ export const useTimerStore = create<TimerState>()(
       isPaused: false,
       taskId: null,
       taskName: null,
+      taskColor: null,
       startTime: null,
       pausedTime: 0,
       elapsedSeconds: 0,
 
-      startTimer: (taskId, taskName) => {
+      startTimer: (taskId, taskName, taskColor) => {
         set({
           isRunning: true,
           isPaused: false,
           taskId,
           taskName,
+          taskColor: taskColor || null,
           startTime: Date.now(),
           pausedTime: 0,
           elapsedSeconds: 0,
@@ -72,6 +75,7 @@ export const useTimerStore = create<TimerState>()(
 
         const result = {
           taskId: state.taskId,
+          taskName: state.taskName || '',
           duration: Math.ceil(totalMs / 1000),
         }
 
@@ -80,6 +84,7 @@ export const useTimerStore = create<TimerState>()(
           isPaused: false,
           taskId: null,
           taskName: null,
+          taskColor: null,
           startTime: null,
           pausedTime: 0,
           elapsedSeconds: 0,
@@ -102,6 +107,7 @@ export const useTimerStore = create<TimerState>()(
           isPaused: false,
           taskId: null,
           taskName: null,
+          taskColor: null,
           startTime: null,
           pausedTime: 0,
           elapsedSeconds: 0,

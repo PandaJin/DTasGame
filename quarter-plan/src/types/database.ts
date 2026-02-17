@@ -13,20 +13,25 @@ export interface UserSettings {
   workingHoursPerDay?: number
 }
 
-export interface Quarter {
+export interface Cycle {
   id: string
   user_id: string
   name: string
   start_date: string
   end_date: string
   is_active: boolean
+  is_archived: boolean
   created_at: string
   updated_at: string
 }
 
+/** @deprecated Use Cycle instead */
+export type Quarter = Cycle
+
 export interface Task {
   id: string
-  quarter_id: string
+  user_id: string
+  quarter_id?: string | null
   name: string
   description: string | null
   priority: 1 | 2 | 3 | 4
@@ -37,6 +42,14 @@ export interface Task {
   is_archived: boolean
   created_at: string
   updated_at: string
+}
+
+export interface CycleTask {
+  id: string
+  cycle_id: string
+  task_id: string
+  weekly_target_hours: number | null
+  created_at: string
 }
 
 export interface TimeEntry {
@@ -68,9 +81,21 @@ export interface TaskWithProgress extends Task {
   status: 'on_track' | 'at_risk' | 'behind' | 'ahead'
 }
 
-export interface QuarterWithTasks extends Quarter {
+export interface CycleWithTasks extends Cycle {
   tasks: TaskWithProgress[]
   total_progress: number
+}
+
+/** @deprecated Use CycleWithTasks instead */
+export type QuarterWithTasks = CycleWithTasks
+
+export interface DailyNote {
+  id: string
+  user_id: string
+  date: string
+  content: string
+  created_at: string
+  updated_at: string
 }
 
 // 分析相关类型

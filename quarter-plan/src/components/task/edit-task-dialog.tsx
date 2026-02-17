@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -23,10 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus } from 'lucide-react'
+import type { Task } from '@/types/database'
 
-interface AddTaskDialogProps {
-  cycleId?: string
+interface EditTaskDialogProps {
+  task: Task
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
 const TASK_COLORS = [
@@ -40,13 +41,12 @@ const TASK_COLORS = [
   { value: '#6B7280', label: '灰色' },
 ]
 
-export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState<string>('1')
-  const [estimatedHours, setEstimatedHours] = useState('')
-  const [color, setColor] = useState('#3B82F6')
+export function EditTaskDialog({ task, open, onOpenChange }: EditTaskDialogProps) {
+  const [name, setName] = useState(task.name)
+  const [description, setDescription] = useState(task.description || '')
+  const [priority, setPriority] = useState<string>(String(task.priority))
+  const [estimatedHours, setEstimatedHours] = useState(String(task.estimated_hours))
+  const [color, setColor] = useState(task.color)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -56,47 +56,19 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
     setLoading(true)
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setLoading(false); return }
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          name,
+          description: description || null,
+          priority: parseInt(priority),
+          estimated_hours: parseFloat(estimatedHours),
+          color,
+        })
+        .eq('id', task.id)
 
-      const { data: newTask, error } = await supabase.from('tasks').insert({
-        user_id: user.id,
-        name,
-        description: description || null,
-        priority: parseInt(priority),
-        estimated_hours: parseFloat(estimatedHours),
-        color,
-      }).select().single()
-
-      if (!error && newTask) {
-        if (cycleId) {
-          const { data: cycle } = await supabase
-            .from('cycles')
-            .select('start_date, end_date')
-            .eq('id', cycleId)
-            .single()
-
-          let weeklyTarget = null
-          if (cycle) {
-            const start = new Date(cycle.start_date)
-            const end = new Date(cycle.end_date)
-            const totalWeeks = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7))
-            weeklyTarget = parseFloat(estimatedHours) / totalWeeks
-          }
-
-          await supabase.from('cycle_tasks').insert({
-            cycle_id: cycleId,
-            task_id: newTask.id,
-            weekly_target_hours: weeklyTarget,
-          })
-        }
-
-        setOpen(false)
-        setName('')
-        setDescription('')
-        setPriority('1')
-        setEstimatedHours('')
-        setColor('#3B82F6')
+      if (!error) {
+        onOpenChange(false)
         router.refresh()
       }
     } finally {
@@ -105,27 +77,21 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" className="min-h-[36px]">
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
-          新任务
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>添加新任务</DialogTitle>
+            <DialogTitle>编辑任务</DialogTitle>
             <DialogDescription>
-              创建一个新的任务目标
+              修改任务的详细信息
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">任务名称</Label>
+              <Label htmlFor="edit-name">任务名称</Label>
               <Input
-                id="name"
+                id="edit-name"
                 placeholder="例如：完成项目A的MVP"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -135,9 +101,9 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">描述（可选）</Label>
+              <Label htmlFor="edit-description">描述（可选）</Label>
               <Textarea
-                id="description"
+                id="edit-description"
                 placeholder="任务的详细描述"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -147,7 +113,7 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="priority">优先级</Label>
+                <Label htmlFor="edit-priority">优先级</Label>
                 <Select value={priority} onValueChange={setPriority}>
                   <SelectTrigger className="h-11 md:h-9">
                     <SelectValue />
@@ -162,9 +128,9 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="estimatedHours">预估时间（小时）</Label>
+                <Label htmlFor="edit-estimatedHours">预估时间（小时）</Label>
                 <Input
-                  id="estimatedHours"
+                  id="edit-estimatedHours"
                   type="number"
                   min="1"
                   step="0.5"
@@ -197,11 +163,11 @@ export function AddTaskDialog({ cycleId }: AddTaskDialogProps) {
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="h-11 md:h-9">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="h-11 md:h-9">
               取消
             </Button>
             <Button type="submit" disabled={loading} className="h-11 md:h-9">
-              {loading ? '添加中...' : '添加任务'}
+              {loading ? '保存中...' : '保存修改'}
             </Button>
           </DialogFooter>
         </form>

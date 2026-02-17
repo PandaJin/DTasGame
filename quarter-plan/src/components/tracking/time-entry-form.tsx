@@ -27,14 +27,17 @@ import type { Task } from '@/types/database'
 
 interface TimeEntryFormProps {
   tasks: Task[]
+  defaultDate?: string
+  triggerLabel?: string
+  compact?: boolean
 }
 
-export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
+export function TimeEntryForm({ tasks, defaultDate, triggerLabel, compact }: TimeEntryFormProps) {
   const [open, setOpen] = useState(false)
   const [taskId, setTaskId] = useState('')
   const [hours, setHours] = useState('')
   const [minutes, setMinutes] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(defaultDate || new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -76,10 +79,16 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          手动添加
-        </Button>
+        {compact ? (
+          <Button variant="ghost" size="icon" className="h-8 w-8 min-h-[32px]">
+            <Plus className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button size="sm" className="min-h-[36px]">
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            {triggerLabel || '手动添加'}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
@@ -92,7 +101,7 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
             <div className="space-y-2">
               <Label>任务</Label>
               <Select value={taskId} onValueChange={setTaskId} required>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 md:h-9">
                   <SelectValue placeholder="选择任务" />
                 </SelectTrigger>
                 <SelectContent>
@@ -100,7 +109,7 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
                     <SelectItem key={task.id} value={task.id}>
                       <span className="flex items-center gap-2">
                         <span
-                          className="w-3 h-3 rounded-full"
+                          className="w-3 h-3 rounded-full shrink-0"
                           style={{ backgroundColor: task.color }}
                         />
                         P{task.priority} - {task.name}
@@ -118,6 +127,7 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
+                className="h-11 md:h-9"
               />
             </div>
 
@@ -130,9 +140,9 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
                   placeholder="小时"
                   value={hours}
                   onChange={(e) => setHours(e.target.value)}
-                  className="w-24"
+                  className="w-20 h-11 md:h-9"
                 />
-                <span>小时</span>
+                <span className="text-sm text-muted-foreground">小时</span>
                 <Input
                   type="number"
                   min="0"
@@ -140,9 +150,9 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
                   placeholder="分钟"
                   value={minutes}
                   onChange={(e) => setMinutes(e.target.value)}
-                  className="w-24"
+                  className="w-20 h-11 md:h-9"
                 />
-                <span>分钟</span>
+                <span className="text-sm text-muted-foreground">分钟</span>
               </div>
             </div>
 
@@ -152,15 +162,16 @@ export function TimeEntryForm({ tasks }: TimeEntryFormProps) {
                 placeholder="做了什么..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                className="h-11 md:h-9"
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} className="h-11 md:h-9">
               取消
             </Button>
-            <Button type="submit" disabled={loading || !taskId}>
+            <Button type="submit" disabled={loading || !taskId} className="h-11 md:h-9">
               {loading ? '添加中...' : '添加'}
             </Button>
           </DialogFooter>

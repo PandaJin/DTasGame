@@ -20,13 +20,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { MoreHorizontal, Check, Trash2 } from 'lucide-react'
-import type { Quarter } from '@/types/database'
+import type { Cycle } from '@/types/database'
 
-interface QuarterActionsProps {
-  quarter: Quarter
+interface CycleActionsProps {
+  quarter: Cycle
 }
 
-export function QuarterActions({ quarter }: QuarterActionsProps) {
+export function CycleActions({ quarter }: CycleActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -35,7 +35,7 @@ export function QuarterActions({ quarter }: QuarterActionsProps) {
   const handleSetActive = async () => {
     setLoading(true)
     await supabase
-      .from('quarters')
+      .from('cycles')
       .update({ is_active: true })
       .eq('id', quarter.id)
     router.refresh()
@@ -45,7 +45,7 @@ export function QuarterActions({ quarter }: QuarterActionsProps) {
   const handleDelete = async () => {
     setLoading(true)
     await supabase
-      .from('quarters')
+      .from('cycles')
       .delete()
       .eq('id', quarter.id)
     setDeleteOpen(false)
@@ -84,7 +84,7 @@ export function QuarterActions({ quarter }: QuarterActionsProps) {
           <DialogHeader>
             <DialogTitle>确认删除</DialogTitle>
             <DialogDescription>
-              确定要删除季度「{quarter.name}」吗？这将同时删除所有相关的任务和时间记录。此操作无法撤销。
+              确定要删除周期「{quarter.name}」吗？这将同时删除所有相关的周期任务关联。此操作无法撤销。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -100,3 +100,6 @@ export function QuarterActions({ quarter }: QuarterActionsProps) {
     </>
   )
 }
+
+/** @deprecated Use CycleActions instead */
+export const QuarterActions = CycleActions

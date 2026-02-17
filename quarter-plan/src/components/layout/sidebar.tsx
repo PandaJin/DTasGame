@@ -4,42 +4,40 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard,
+  ListTodo,
+  CalendarDays,
   Calendar,
-  Clock,
-  BarChart3,
-  Settings,
-  LogOut
+  User,
+  LogOut,
+  Timer,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { TimerPanel } from '@/components/timer/timer-panel'
+import { useTimerStore } from '@/stores/timer-store'
 
 const navItems = [
   {
-    title: '概览',
-    href: '/dashboard',
-    icon: LayoutDashboard,
+    title: '任务',
+    href: '/dashboard/tasks',
+    icon: ListTodo,
   },
   {
-    title: '季度',
-    href: '/dashboard/quarters',
+    title: '本周',
+    href: '/dashboard/week',
+    icon: CalendarDays,
+  },
+  {
+    title: '周期',
+    href: '/dashboard/cycles',
     icon: Calendar,
   },
   {
-    title: '时间追踪',
-    href: '/dashboard/track',
-    icon: Clock,
-  },
-  {
-    title: '数据分析',
-    href: '/dashboard/analytics',
-    icon: BarChart3,
-  },
-  {
-    title: '设置',
-    href: '/dashboard/settings',
-    icon: Settings,
+    title: '我的',
+    href: '/dashboard/me',
+    icon: User,
   },
 ]
 
@@ -52,6 +50,8 @@ export function Sidebar({ className, onNavClick }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const [timerPanelOpen, setTimerPanelOpen] = useState(false)
+  const { isRunning } = useTimerStore()
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -66,14 +66,13 @@ export function Sidebar({ className, onNavClick }: SidebarProps) {
   return (
     <div className={cn('flex flex-col w-64 border-r bg-card', className)}>
       <div className="p-6">
-        <h1 className="text-xl font-bold">QuarterPlan</h1>
-        <p className="text-sm text-muted-foreground">季度目标管理</p>
+        <h1 className="text-xl font-bold">CyclePlan</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">周期计划管理</p>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href ||
-            (item.href !== '/dashboard' && pathname.startsWith(item.href))
+          const isActive = pathname.startsWith(item.href)
 
           return (
             <Link
@@ -81,29 +80,45 @@ export function Sidebar({ className, onNavClick }: SidebarProps) {
               href={item.href}
               onClick={handleNavClick}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
                 isActive
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className={cn("h-4 w-4", isActive && "stroke-[2.5px]")} />
               {item.title}
             </Link>
           )
         })}
+
+        {/* Timer entry */}
+        <button
+          onClick={() => { handleNavClick(); setTimerPanelOpen(true) }}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+            isRunning
+              ? 'bg-green-500/10 text-green-600 hover:bg-green-500/20'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}
+        >
+          <Timer className="h-4 w-4" />
+          {isRunning ? '计时中...' : '开始计时'}
+        </button>
       </nav>
 
-      <div className="p-4 border-t">
+      <div className="p-3 border-t">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
           退出登录
         </Button>
       </div>
+
+      <TimerPanel open={timerPanelOpen} onOpenChange={setTimerPanelOpen} />
     </div>
   )
 }

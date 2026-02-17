@@ -17,31 +17,33 @@ export default function DashboardLayout({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex h-screen overflow-hidden">
-        {/* 桌面端侧边栏 */}
+      <div className="flex h-dvh overflow-hidden">
+        {/* Desktop sidebar */}
         <Sidebar className="hidden md:flex" />
 
-        {/* 移动端侧边栏遮罩 */}
+        {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             <div
-              className="fixed inset-0 bg-black/50"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
             <Sidebar
-              className="fixed left-0 top-0 h-full z-50"
+              className="fixed left-0 top-0 h-full z-50 animate-in slide-in-from-left duration-200"
               onNavClick={() => setSidebarOpen(false)}
             />
           </div>
         )}
 
-        {/* 主内容区 */}
+        {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={() => setSidebarOpen(true)} />
-          <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6 bg-muted/30">
-            {children}
+          <main className="flex-1 overflow-auto p-3 md:p-6 pb-20 md:pb-6 bg-muted/30">
+            <div className="max-w-4xl mx-auto">
+              {children}
+            </div>
           </main>
-          {/* 移动端底部导航 */}
+          {/* Mobile bottom nav */}
           <MobileNav className="md:hidden" />
         </div>
       </div>
